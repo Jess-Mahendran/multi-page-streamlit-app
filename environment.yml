@@ -1,0 +1,6 @@
+name: sf_env
+channels:
+  - snowflake
+dependencies:
+  - scikit-learn
+  - streamlit=1.31.1

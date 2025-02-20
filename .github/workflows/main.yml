@@ -1,0 +1,52 @@
+name: Deploy Streamlit App via Snowflake CLI
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.8'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Snowflake CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install snowflake-cli
+
+      - name: Configure Snowflake CLI
+        run: |
+          mkdir -p ~/.snowflake
+          echo "[connections.myconnection]" > ~/.snowflake/config.toml
+          echo "account = 'gp81875.west-europe.azure'" >> ~/.snowflake/config.toml
+          echo "user = 'serah.jessica.mahendran@lumilinks.com'" >> ~/.snowflake/config.toml
+          echo "role = 'DATA_SCIENTIST'" >> ~/.snowflake/config.toml
+          echo "database = 'DEV_DS'" >> ~/.snowflake/config.toml
+          echo "schema = 'DEV_JM'" >> ~/.snowflake/config.toml
+          echo "warehouse = 'COMPUTE_WH'" >> ~/.snowflake/config.toml
+          echo "authenticator = 'externalbrowser'" >> ~/.snowflake/config.toml
+
+      - name: Authenticate Snowflake using External Browser
+        run: |
+          snowsql -a gp81875.west-europe.azure \
+                  -u serah.jessica.mahendran@lumilinks.com \
+                  -r DATA_SCIENTIST \
+                  -d DEV_DS \
+                  -s DEV_JM \
+                  --authenticator externalbrowser
+
+      - name: Deploy Streamlit App to Snowflake
+        run: |
+          snow streamlit deploy --replace

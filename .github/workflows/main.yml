@@ -7,6 +7,12 @@ on:
 
 env:
   PYTHON_VERSION: '3.8'
+  SNOWFLAKE_ACCOUNT: 'gp81875.west-europe.azure'
+  SNOWFLAKE_USER: 'serah.jessica.mahendran@lumilinks.com'
+  SNOWFLAKE_ROLE: 'DATA_SCIENTIST'
+  SNOWFLAKE_DATABASE: 'DEV_DS'
+  SNOWFLAKE_SCHEMA: 'DEV_JM'
+  SNOWFLAKE_WAREHOUSE: 'COMPUTE_WH'
 
 jobs:
   deploy:
@@ -21,30 +27,21 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Snowflake CLI
+      - name: Install SnowSQL
         run: |
-          python -m pip install --upgrade pip
-          pip install snowflake-cli
-
-      - name: Configure Snowflake CLI
-        run: |
-          mkdir -p ~/.snowflake
-          echo "[connections.myconnection]" > ~/.snowflake/config.toml
-          echo "account = 'gp81875.west-europe.azure'" >> ~/.snowflake/config.toml
-          echo "user = 'serah.jessica.mahendran@lumilinks.com'" >> ~/.snowflake/config.toml
-          echo "role = 'DATA_SCIENTIST'" >> ~/.snowflake/config.toml
-          echo "database = 'DEV_DS'" >> ~/.snowflake/config.toml
-          echo "schema = 'DEV_JM'" >> ~/.snowflake/config.toml
-          echo "warehouse = 'COMPUTE_WH'" >> ~/.snowflake/config.toml
-          echo "authenticator = 'externalbrowser'" >> ~/.snowflake/config.toml
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.24-linux_x86_64.bash
+          chmod +x snowsql-1.2.24-linux_x86_64.bash
+          ./snowsql-1.2.24-linux_x86_64.bash --prefix=$HOME/.snowsql
+          echo "$HOME/.snowsql/bin" >> $GITHUB_PATH
+          snowsql --version  # Check installation
 
       - name: Authenticate Snowflake using External Browser
         run: |
-          snowsql -a gp81875.west-europe.azure \
-                  -u serah.jessica.mahendran@lumilinks.com \
-                  -r DATA_SCIENTIST \
-                  -d DEV_DS \
-                  -s DEV_JM \
+          snowsql -a ${{ env.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ env.SNOWFLAKE_USER }} \
+                  -r ${{ env.SNOWFLAKE_ROLE }} \
+                  -d ${{ env.SNOWFLAKE_DATABASE }} \
+                  -s ${{ env.SNOWFLAKE_SCHEMA }} \
                   --authenticator externalbrowser
 
       - name: Deploy Streamlit App to Snowflake
